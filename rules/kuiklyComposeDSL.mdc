@@ -1,0 +1,360 @@
+---
+description: KuiklyComposeDSL 跨端开发规范, 涵盖注意事项、组件、API 差异、最佳实践参考
+alwaysApply: true
+enabled: true
+updatedAt: 2026-04-02T20:45:00.000Z
+provider:
+---
+
+# KuiklyComposeDSL 跨端开发完整规范
+
+你是一位精通 Kuikly Compose、Kotlin 及 Jetpack Compose 的跨端开发专家，擅长基于 Compose 声明式 UI 构建高性能、易维护的多端应用（Android / iOS / 鸿蒙 / H5 / 小程序）。
+
+> **本文档整合了架构规范与原生 Compose 差异速查，开发时直接参照即可。**
+
+## 一、核心架构认知
+
+- **上层是标准 Compose 语义，下层替换为 Kuikly 的跨端渲染与动态化引擎。**
+
+## 二、跨平台注意事项
+
+- **在 commonMain 中编写**：尽量把所有 Compose UI 代码和业务逻辑集中在 `commonMain` 中
+- **依赖使用**：优先使用多架构的 KMP 库，非必要不要分平台依赖
+- **多平台兼容**：禁止直接在 `commonMain` 写平台相关的代码
+
+## 三、包名导入规则（极其重要）
+
+| 用途 | 正确 import | ❌ 错误 import |
+|------|-----------|--------------|
+| `@Composable`, `remember`, `mutableStateOf` | `androidx.compose.runtime.*` | — |
+| `Modifier`, `Color`, `dp`, `sp` | `com.tencent.kuikly.compose.ui.*` | `androidx.compose.ui.*` |
+| `Column`, `Row`, `Box`, `LazyColumn` | `com.tencent.kuikly.compose.foundation.*` | `androidx.compose.foundation.*` |
+| `Text`, `Button`, `Card`, `Scaffold` | `com.tencent.kuikly.compose.material3.*` | `androidx.compose.material3.*` |
+| `AnimatedVisibility`, `fadeIn` | `com.tencent.kuikly.compose.animation.*` | `androidx.compose.animation.*` |
+
+**总结**：只有 `androidx.compose.runtime.*` 使用官方包，其余一律使用 `com.tencent.kuikly.compose.*`。
+
+## 四、页面定义
+
+Kuikly Compose 页面需继承 `ComposeContainer`，并使用 `@Page` 注解标记。
+
+```kotlin
+import com.tencent.kuikly.compose.ComposeContainer
+import com.tencent.kuikly.compose.setContent
+import com.tencent.kuikly.core.annotations.Page
+
+@Page("YourPageName")
+class YourPage : ComposeContainer() {
+
+    override fun willInit() {
+        super.willInit()
+        setContent {
+            YourScreen()
+        }
+    }
+}
+```
+
+### 关键步骤
+
+1. **创建页面类**：继承 `ComposeContainer`，使用 `@Page` 注解定义页面名称。
+2. **实现 Compose UI**：在 `willInit()` 中调用 `setContent {}` 设置 UI，内部使用 Compose DSL 编写。
+3. **生命周期与路由**：页面生命周期、路由跳转等能力来自 Kuikly Core，与 Kuikly DSL 页面保持一致。
+4. **Module 使用时机**：`willInit()` 过程中**不能**使用 Module（此时尚未注册），需在 Pager 生命周期启动后再调用。
+
+## 五、不可用 API（使用会导致编译报错）
+
+### 5.1 不可用组件
+
+| 原生 Compose 组件 | 替代方案 |
+|---|---|
+| `OutlinedTextField(...)` | 用 `TextField(...)` 自定义 `shape` / `colors` 模拟 |
+| `BasicTextField2` / `TextFieldState` | 用 `BasicTextField(value, onValueChange)` Legacy API |
+| `PullToRefreshBox` | 用 `pullToRefreshItem()`（见第九章 PullToRefresh） |
+| `ClickableText` | 用 `Text` + `AnnotatedString` 配合 `LinkAnnotation.Clickable`（见 7.4） |
+| `Icon` / `IconImage` | 不支持，用 `Image` 替代 |
+
+### 5.2 不可用 API / Modifier
+
+| 原生 Compose API | 替代方案 |
+|---|---|
+| `Modifier.verticalScroll(state)` | 用 `LazyColumn` 包裹单个 `item {}` |
+| `Modifier.horizontalScroll(state)` | 用 `LazyRow` 包裹单个 `item {}` |
+| `Modifier.scrollable(state, orientation)` | 不可用，滚动由原生 ScrollView 驱动 |
+| `Modifier.nestedScroll(connection, dispatcher)` | 用 `Modifier.nestedScroll(scrollUp, scrollDown)`（见第八章） |
+| `Modifier.swipeable(...)` / `SwipeableState` | 用 `Modifier.draggable()` 或 `AnchoredDraggable` |
+| `Modifier.imePadding()` / `WindowInsets.ime` | 删除即可，键盘适配由原生层处理 |
+| `Modifier.animateItem()`（LazyColumn / LazyRow 内） | 不可用，需删除（Grid / StaggeredGrid 中可用） |
+| `Modifier.animateItemPlacement()`（LazyColumn / LazyRow 内） | 同上 |
+| `TopAppBarScrollBehavior` | `TopAppBar` 不支持滚动折叠 |
+| `PasswordVisualTransformation()` | 用 `KeyboardOptions(keyboardType = KeyboardType.Password)` |
+| `Modifier.shadow(ambientShadowColor = ...)` | `ambientShadowColor` 无效，改用 `spotShadowColor` |
+
+## 六、参数有差异的组件
+
+### 6.1 常用组件差异
+以下组件可正常使用，但需注意**删除** `reverseLayout` 和 `flingBehavior` 参数。
+
+| 分类 | 组件 | 需删除的参数 | Kuikly 新增参数 |
+|------|------|-------------|----------------|
+| 列表 | LazyColumn / LazyRow | `reverseLayout`, `flingBehavior` | `beyondBoundsItemCount = 3` |
+| 网格 | LazyVerticalGrid / LazyHorizontalGrid | `reverseLayout`, `flingBehavior` | `beyondBoundsLineCount = 3` |
+| 瀑布流 | LazyVerticalStaggeredGrid / LazyHorizontalStaggeredGrid | `reverseLayout`, `flingBehavior` | `beyondBoundsItemCount = 3` |
+| 翻页 | HorizontalPager / VerticalPager | `reverseLayout`, `flingBehavior`, `pageNestedScrollConnection` | — |
+| 导航栏 | TopAppBar | `scrollBehavior` | — |
+
+### 6.2 ModalBottomSheet（签名差异较大）
+
+```kotlin
+// ❌ 原生写法中 sheetState/shape/dragHandle 均不存在
+// ✅ KuiklyCompose 写法
+ModalBottomSheet(
+    visible = showSheet,              // 用 Boolean 控制显隐（替代 sheetState）
+    onDismissRequest = { showSheet = false },
+    containerColor = ...,
+    scrimColor = ...,
+    dismissOnDrag = false,            // Kuikly 新增：是否支持下拉关闭
+    dismissThreshold = 0.25f,         // Kuikly 新增：下拉关闭阈值
+    animationDurationMillis = 250,    // Kuikly 新增：动画时长
+) { /* content: @Composable ColumnScope.() -> Unit */ }
+```
+
+### 6.3 stickyHeader — content lambda 多一个 Int 参数
+
+```kotlin
+// ❌ 原生：stickyHeader(key) { content }
+// ✅ Kuikly：stickyHeader(key) { _ -> content }   // LazyItemScope.(Int) -> Unit
+
+// Kuikly 独有扩展（需 @OptIn(ExperimentalFoundationApi::class)）：
+stickyHeaderWithMarginTop(key, listState, hoverMarginTop = 56.dp) { _ -> content }
+```
+
+## 七、TextField / 输入框差异详解
+
+### 7.1 核心差异总结
+
+| 差异点 | 说明 |
+|--------|------|
+| 无 `OutlinedTextField` | 用 `TextField` + 自定义 `shape` / `colors` 模拟 |
+| `TextField` 无 `TextFieldValue` 重载 | 仅支持 `String` 版本；需要 `TextFieldValue` 版本请用 `BasicTextField` |
+| `onValueChange` 有默认空实现 | **务必显式传入**，否则输入不会更新 state |
+| `VisualTransformation` 不生效 | 密码输入改用 `KeyboardOptions(keyboardType = KeyboardType.Password)` |
+| `TextFieldValue.selection` 始终返回 `TextRange.Zero` | 不要依赖 selection 控制光标，暂无替代方案 |
+| `KeyboardType.Phone` / `Uri` / `Decimal` | 均映射为默认键盘，无专用键盘（`Decimal` 可用 `Number` 替代） |
+| 键盘显隐控制 | `show()` / `hide()` 可用但异步延迟执行，避免同帧连续调用 |
+| `Text` 组件不支持自由复制 | 用户无法通过长按等方式选择并复制文本内容 |
+
+### 7.2 输入长度限制（⚠️ 重要）
+
+**禁止**在 `onValueChange` 中截断文本来限制长度（会导致光标异常）。请使用 Kuikly 提供的扩展 Modifier：
+
+```kotlin
+import com.tencent.kuikly.compose.foundation.text.maxLength
+import com.tencent.kuikly.compose.foundation.text.onLimitChange
+import com.tencent.kuikly.core.views.LengthLimitType
+
+TextField(
+    value = text,
+    onValueChange = { text = it },
+    modifier = Modifier
+        .maxLength(length = 10, type = LengthLimitType.CHARACTER)
+        .onLimitChange { length, limit -> /* 处理限制回调 */ }
+)
+```
+
+### 7.3 密码输入框写法
+
+```kotlin
+// ❌ visualTransformation = PasswordVisualTransformation()  // 不生效
+// ✅ 用原生密码键盘
+TextField(
+    value = password,
+    onValueChange = { password = it },
+    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+    singleLine = true,
+)
+```
+
+### 7.4 ClickableText 替代方案
+
+```kotlin
+val annotatedString = buildAnnotatedString {
+    append("我已阅读并同意")
+    withLink(
+        LinkAnnotation.Clickable(
+            tag = "agreement",
+            styles = linkStyle,
+            linkInteractionListener = LinkInteractionListener { /* 处理点击 */ },
+        ),
+    ) {
+        append("《用户协议》")
+    }
+}
+Text(text = annotatedString)
+```
+
+## 八、嵌套滚动（API 完全不同）
+
+### 8.1 基本 API
+
+```kotlin
+// ❌ 原生 Modifier.nestedScroll(connection: NestedScrollConnection) — 不可用
+// ✅ KuiklyCompose
+import com.tencent.kuikly.compose.extension.NestedScrollMode
+import com.tencent.kuikly.compose.extension.nestedScroll
+
+Modifier.nestedScroll(
+    scrollUp = NestedScrollMode.SELF_FIRST,     // 上滑时的策略
+    scrollDown = NestedScrollMode.PARENT_FIRST   // 下滑时的策略
+)
+```
+
+### 8.2 NestedScrollMode 三种模式
+
+| 模式 | 含义 | 典型场景 |
+|------|------|----------|
+| `SELF_ONLY` | 仅当前控件处理，不传递 | 禁止越界回弹 |
+| `SELF_FIRST` | 当前控件优先（**默认值**） | 大部分场景 |
+| `PARENT_FIRST` | 父控件优先 | 下拉刷新 |
+
+### 8.3 常见场景
+
+```kotlin
+// 场景1：禁止越界回弹
+Modifier.nestedScroll(scrollUp = SELF_ONLY, scrollDown = SELF_ONLY)
+
+// 场景2：下拉刷新（父容器优先处理下拉）
+Modifier.nestedScroll(scrollUp = SELF_FIRST, scrollDown = PARENT_FIRST)
+
+// 场景3：嵌套 LazyColumn（内层先滚，需固定高度）
+Modifier.height(300.dp).nestedScroll(scrollUp = SELF_FIRST, scrollDown = SELF_FIRST)
+```
+
+**AppBar 折叠**：`TopAppBar` 不支持 `scrollBehavior`，无法直接实现折叠效果。替代方案：固定 `TopAppBar` + 监听 `firstVisibleItemScrollOffset` 手动计算高度变化。
+
+### 8.4 不可实现的场景
+
+以下原生能力在 KuiklyCompose 中**均不可实现**（仅支持上述三种固定模式）：
+
+- `onPreScroll` / `onPostScroll` 按比例消费
+- `onPreFling` / `onPostFling` 拦截
+- 自定义 `FlingBehavior` / `OverScrollEffect`
+
+## 九、PullToRefresh（API 完全不同）
+
+```kotlin
+// ❌ PullToRefreshBox 不存在
+// ✅ 作为 LazyList 的第一个 item
+val pullState = rememberPullToRefreshState(isRefreshing)
+val listState = rememberLazyListState()
+
+LazyColumn(state = listState) {
+    pullToRefreshItem(
+        state = pullState,
+        onRefresh = { /* 刷新逻辑 */ },
+        scrollState = listState,
+        refreshThreshold = 80.dp,    // 可选
+        content = { pullProgress, isRefreshing, threshold ->  // 可选：自定义指示器
+            Text(if (isRefreshing) "刷新中..." else "下拉刷新")
+        }
+    )
+    items(data) { item -> ... }
+}
+```
+
+## 十、手势系统
+
+### 10.1 注意事项
+
+- **滚动中 tap 不触发**：默认启用 `GlobalTapManager.enableTouchSlopForTap`，滚动中手指移动超过 touchSlop 则 tap 取消。若需"滚动时也能点击"，可将其设为 `false`。
+- **拖拽与滚动冲突**：`Modifier.draggable` 方向与滚动方向一致时会冲突，建议设置正交 `orientation`。
+
+### 10.2 pointerInput 闭包陷阱（⚠️ 极其重要）
+
+`pointerInput(key)` 的闭包会捕获创建时的变量值。**闭包内读取的所有可变状态都必须作为 key 参数**，否则读取到的永远是旧值：
+
+```kotlin
+// ❌ 错误：key 为 Unit，闭包内 count 永远是旧值
+Modifier.pointerInput(Unit) {
+    detectTapGestures { println("count = $count") }  // 永远打印初始值
+}
+
+// ✅ 正确：将依赖的状态作为 key
+Modifier.pointerInput(count) {
+    detectTapGestures { println("count = $count") }  // 打印最新值
+}
+
+// ✅ 多个依赖
+Modifier.pointerInput(isEnabled, threshold) {
+    detectDragGestures { change, dragAmount ->
+        if (isEnabled && dragAmount.x > threshold) { /* ... */ }
+    }
+}
+```
+
+**LazyColumn 列表项中尤其注意**：复用时闭包不更新会导致点击错乱：
+
+```kotlin
+// ❌ 错误
+items(items, key = { it.id }) { item ->
+    Row(modifier = Modifier.pointerInput(Unit) { /* item 是旧值 */ })
+}
+
+// ✅ 正确
+items(items, key = { it.id }) { item ->
+    Row(modifier = Modifier.pointerInput(item) { /* item 是最新值 */ })
+}
+```
+
+### 10.3 Kuikly 独有：scrollToTop 事件
+
+```kotlin
+LazyColumn(modifier = Modifier.scrollToTop { /* 自定义回顶逻辑 */ })
+```
+
+## 十一、动画已知问题
+
+| 动画 API | 效果 | 状态 | 备注 |
+|----------|------|------|------|
+| `AnimatedVisibility` + `fadeIn` / `fadeOut` | 淡入淡出 | 🚧 待修复 | `layerBlock` 缺失导致动画不生效 |
+| `AnimatedVisibility` + `expandXXX` / `shrinkXXX` | 展开 / 收缩 | 🔽 低优 | — |
+| `AnimatedVisibility` + `scaleIn` / `scaleOut` | 缩放 | 🚧 待修复 | `layerBlock` 缺失导致动画不生效 |
+
+## 十二、资源管理
+
+本地资源 assets 资源存放在业务 Kuikly 模块（`$moduleName`）下的 `commonMain/assets` 目录（如无该目录请新建）：
+
+- **公共资源**：`$moduleName/src/commonMain/assets/common`
+- **页面资源**：`$moduleName/src/commonMain/assets/$pageName`
+
+```kotlin
+import com.tencent.kuikly.compose.resources.DrawableResource
+import com.tencent.kuikly.core.base.attr.ImageUri
+
+// common 目录资源
+@OptIn(InternalResourceApi::class)
+val image = DrawableResource(ImageUri.commonAssets("assetsName").toUrl(""))
+
+// 页面目录资源
+@OptIn(InternalResourceApi::class)
+val drawable = DrawableResource(ImageUri.pageAssets("assetsName").toUrl("pageName"))
+Image(
+    painter = painterResource(drawable),
+    contentDescription = "本地图片"
+)
+```
+
+## 十三、Kuikly 独有 Modifier 扩展速查
+
+| 扩展 | 适用组件 | 说明 |
+|------|----------|------|
+| `Modifier.nativeRef` | 通用 | 获取原生视图引用 |
+| `Modifier.lineBreakMargin(dp)` | Text | 最后一行预留空间 |
+| `Modifier.lineSpacing(lineSpace)` | Text | 行间距 |
+| `Modifier.keyboardHeightChange(cb)` | TextField | 监听键盘高度变化 |
+| `Modifier.placeHolder(text, color)` | TextField | 占位符 |
+| `Modifier.maxLength(length, type)` | TextField | 最大输入长度（见第七章） |
+| `Modifier.onLimitChange(cb)` | TextField | 输入超限回调 |
+| `Modifier.scrollToTop(cb)` | 可滚动组件 | 拦截状态栏点击回顶部 |
+| `Modifier.bouncesEnable(enabled)` | 可滚动组件 | 回弹控制 |
+| `Modifier.nestedScroll(up, down)` | 可滚动组件 | 嵌套滚动策略（见第八章） |

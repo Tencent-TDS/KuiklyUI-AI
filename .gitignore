@@ -1,0 +1,15 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.codebuddy
+.cursor
+.claude
+.vscode
+.js-backup
+.DS_Store
+.idea
+
+node_modules
