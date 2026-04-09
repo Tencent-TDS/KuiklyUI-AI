@@ -533,7 +533,6 @@ Kuikly 使用 **FlexBox 布局**作为跨平台布局规则，确保各平台一
 ## Compose DSL 速查
 
 Kuikly 同时支持 Compose DSL 语法，覆盖 Android/iOS/鸿蒙/H5/微信小程序。
-> **详细文档请调用 `kuikly-compose-ui` skill**，以下为快速参考。
 
 ### Compose DSL 页面定义
 
