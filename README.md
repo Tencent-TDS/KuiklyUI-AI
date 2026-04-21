@@ -26,3 +26,13 @@ AI can be used to build AI-driven Kuikly apps and accelerate development workflo
 | [kuikly-visibility-exposure](skills/kuikly-visibility-exposure/SKILL.md) | Implements visibility events (didAppear, didDisappear, willAppear, willDisappear, appearPercentage) for exposure tracking. Use when reporting component visibility or monitoring scroll-based exposure. |
 | [kuikly-multi-module-config](skills/kuikly-multi-module-config/SKILL.md) | Configures multi-module Kuikly projects. Use when creating new Kuikly sub-modules, setting up multi-module parameters, or resolving KuiklyCoreEntry conflicts. |
 | [kuikly-compose-interop-dsl](skills/kuikly-compose-interop-dsl/SKILL.md) | Integrates Kuikly DSL components within Compose DSL pages. Use when embedding DeclarativeBaseView/ViewContainer in Compose or calling Kuikly Modules from Compose. |
+
+### Install and update
+
+```
+// Install
+npx skills add Tencent-TDS/KuiklyUI-AI/skills
+
+// update
+npx skills update Tencent-TDS/KuiklyUI-AI/skills
+```
