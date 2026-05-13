@@ -26,6 +26,7 @@ AI can be used to build AI-driven Kuikly apps and accelerate development workflo
 | [kuikly-visibility-exposure](skills/kuikly-visibility-exposure/SKILL.md) | Implements visibility events (didAppear, didDisappear, willAppear, willDisappear, appearPercentage) for exposure tracking. Use when reporting component visibility or monitoring scroll-based exposure. |
 | [kuikly-multi-module-config](skills/kuikly-multi-module-config/SKILL.md) | Configures multi-module Kuikly projects. Use when creating new Kuikly sub-modules, setting up multi-module parameters, or resolving KuiklyCoreEntry conflicts. |
 | [kuikly-compose-interop-dsl](skills/kuikly-compose-interop-dsl/SKILL.md) | Integrates Kuikly DSL components within Compose DSL pages. Use when embedding DeclarativeBaseView/ViewContainer in Compose or calling Kuikly Modules from Compose. |
+| [kuikly-recomposition-analyzer](skills/kuikly-recomposition-analyzer/SKILL.md) | Analyze KuiklyUI Compose DSL recomposition performance issues from Recomposition Profiler output. Use when analyzing profiler_report.json / profiler_frames.jsonl log files or optimizing recomposition performance. |
 
 ### Install and update
 
