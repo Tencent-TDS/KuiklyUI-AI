@@ -67,12 +67,52 @@ class MyViewModel : ViewModel() {
 }
 ```
 
-### 方案 3：`derivedStateOf` 派生局部状态
+### 方案 3：`derivedStateOf` 派生局部状态（保护下游组件）
+
+> ⚠️ **前提**：`derivedStateOf` 只能观察 **Compose Snapshot State**（如 `mutableStateOf`、`collectAsState()` 的结果）。直接读取 `StateFlow.value` 是**不可观察的**，`derivedStateOf` 不会感知变化，结果永远是初始值。
+
+**适用场景**：父组件需要读取 `uiState` 多个字段，但只想让部分下游组件在特定字段变化时重组。
 
 ```kotlin
-// ✅ 只有派生值变化时才重组
-val isLoggedIn by remember { derivedStateOf { uiState.value.userId != null } }
+// ✅ 正确：先 collectAsState，再 derivedStateOf
+val uiState by viewModel.uiState.collectAsState()
+// uiState 任意字段变化 → 父组件重组
+// isLoggedIn 只在 userId 变化时触发下游重组（保护下游，保护不了父组件自身）
+val isLoggedIn by remember { derivedStateOf { uiState.userId != null } }
 ```
+
+---
+
+### 方案 4：`LaunchedEffect + collect + distinctUntilChanged`（保护父组件自身）
+
+**适用场景**：父组件只需要 StateFlow 中的某一个字段，不想因整个 StateFlow 的高频更新触发父组件重组。这是比方案 3 更彻底的解法——从根本上切断父组件对高频 StateFlow 的订阅。
+
+```kotlin
+// ❌ 错误写法 1：collectAsState 订阅整个 StateFlow，任意字段变化都触发父组件重组
+val uiState by viewModel.uiState.collectAsState()
+
+// ❌ 错误写法 2：StateFlow.value 不是 Compose State，derivedStateOf 观察不到
+val isLoggedIn by remember { derivedStateOf { viewModel.uiState.value.userId != null } }
+
+// ✅ 正确：LaunchedEffect + map + distinctUntilChanged
+// 只有 userId 字段真正变化时才写入本地 State，父组件只因此字段触发重组
+var isLoggedIn by remember { mutableStateOf(false) }
+LaunchedEffect(viewModel) {
+    viewModel.uiState
+        .map { it.userId != null }
+        .distinctUntilChanged()  // 值未变时不写入，不触发重组
+        .collect { isLoggedIn = it }
+}
+```
+
+**方案 3 vs 方案 4 对比：**
+
+| | 方案 3（derivedStateOf） | 方案 4（LaunchedEffect collect） |
+|---|---|---|
+| 父组件是否重组 | ✗ uiState 任意字段变化都触发 | ✅ 只有目标字段变化才触发 |
+| 下游组件是否重组 | ✅ 只在派生值变化时触发 | ✅ 只在派生值变化时触发 |
+| 适用场景 | 父组件需要 uiState 多个字段 | 父组件只需要 uiState 中一个字段 |
+| 代价 | 无 | 多一个协程 + 本地 mutableState |
 
 ---
 
