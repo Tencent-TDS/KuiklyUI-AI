@@ -11,6 +11,39 @@ AI can be used to build AI-driven Kuikly apps and accelerate development workflo
 | [kuiklyDSL.mdc](rules/kuiklyDSL.mdc) | Kuikly DSL cross-platform development guidelines covering architecture, coding, UI, performance, and state management best practices. |
 | [kuiklyComposeDSL.mdc](rules/kuiklyComposeDSL.mdc) | Kuikly Compose DSL cross-platform development guidelines covering component usage, API differences, and best practices. |
 
+### How to use Rules
+
+Rules are written in the `.mdc` format and loaded by [CodeBuddy](https://www.codebuddy.ai/) as project-level context. Choose the rule that matches the DSL you are using:
+
+- Use **`kuiklyDSL.mdc`** when developing with the Kuikly DSL.
+- Use **`kuiklyComposeDSL.mdc`** when developing with the Kuikly Compose DSL.
+
+#### CodeBuddy
+
+1. Create a `.codebuddy/rules/` directory in your project root (if it does not already exist).
+2. Copy the desired `.mdc` file(s) from this repo into `.codebuddy/rules/`, for example:
+   ```
+   your-project/
+   └── .codebuddy/
+       └── rules/
+           ├── kuiklyDSL.mdc
+           └── kuiklyComposeDSL.mdc
+   ```
+3. CodeBuddy will automatically load these rules and apply them when generating or editing code.
+
+#### Other AI tools (Cursor / Claude Code / Windsurf, etc.)
+
+The `.mdc` files are plain Markdown with a small YAML front-matter, so they can also be reused by other AI coding tools — just place them in the directory each tool expects, or rename/convert as needed:
+
+| Tool | Target location | Notes |
+|---|---|---|
+| Cursor | `.cursor/rules/kuiklyDSL.mdc` | Native `.mdc` support, copy as-is. |
+| Claude Code | `CLAUDE.md` (project root) | Concatenate the rule body into `CLAUDE.md`, or reference it via `@rules/kuiklyDSL.mdc`. |
+| Other tools | Custom instructions / system prompt | Paste the rule body into the tool's custom instructions field. |
+
+
+> Tip: You can extend the official rules with your own project conventions (directory layout, naming, architecture decisions, etc.) so that AI better follows your team's standards.
+
 ## Available Skills
 
 | Skill | Description |
