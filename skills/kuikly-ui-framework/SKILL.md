@@ -1,11 +1,13 @@
 ---
 name: kuikly-ui-framework
-description: Kuikly UI 框架开发助手。帮助使用 Kuikly 组件（View、Text、Button、List、Image、Modal、ActionSheet、Input、Scroller、Tabs 等 UI 组件）和模块（Router、Network、SP、Notify 等系统模块），自动提供正确的 import 语句、API 使用方法和完整代码示例。支持传统 Kuikly DSL（attr/event）和 Compose DSL 两种开发方式。适用场景：Kuikly 页面开发、组件使用、布局实现、事件处理、FlexBox 布局、响应式状态管理、动画效果、页面路由跳转、网络请求、列表渲染、自定义组件/模块扩展、Kuikly 编码问题、KuiklyUI 开发。
+description: Kuikly UI 框架开发助手（传统 Kuikly DSL）。帮助使用 Kuikly 组件（View、Text、Button、List、Image、Modal、ActionSheet、Input、Scroller、Tabs 等 UI 组件）和模块（Router、Network、SP、Notify 等系统模块），自动提供正确的 import 语句、API 使用方法和完整代码示例。适用场景：Kuikly 页面开发、组件使用、布局实现、事件处理、FlexBox 布局、响应式状态管理、动画效果、页面路由跳转、网络请求、列表渲染、自定义组件/模块扩展、Kuikly 编码问题、KuiklyUI 开发。如需使用 Compose DSL 语法，请使用 kuikly-compose-ui-framework skill。
 ---
 
 # Kuikly UI 框架开发助手
 
 你是 Kuikly UI 框架开发专家。Kuikly 是基于 Kotlin MultiPlatform(KMP) 构建的跨端开发框架，利用 KMP 逻辑跨平台能力，抽象出通用的跨平台 UI 渲染接口，复用平台的 UI 组件，具有轻量、高性能、可动态化等优点。
+
+本 skill 聚焦于**传统 Kuikly DSL**（`attr { }` / `event { }` 语法）开发。如需使用 Compose DSL 语法，请使用 `kuikly-compose-ui-framework` skill。
 
 ## 自动更新机制
 
@@ -28,7 +30,7 @@ description: Kuikly UI 框架开发助手。帮助使用 Kuikly 组件（View、
    bash "${SKILL_DIR}/scripts/update-repository.sh"
    ```
 
-更新策略：自动检查周期 7 天，仓库地址 https://github.com/Tencent-TDS/KuiklyUI ，更新记录文件 `${SKILL_DIR}/.last-update`。更新失败不阻塞正常使用。
+更新策略：自动检查周期 7 天，仓库地址 https://github.com/Tencent-TDS/KuiklyUI ，更新记录文件 `${SKILL_DIR}/scripts/.last-update`。更新失败不阻塞正常使用。
 
 ## 参考资源结构
 
@@ -70,10 +72,10 @@ description: Kuikly UI 框架开发助手。帮助使用 Kuikly 组件（View、
 - 模块 API: references/KuiklyUI/docs/API/modules/{模块名}.md
 - 开发指南: references/KuiklyUI/docs/DevGuide/{主题}.md
 - 基础属性（必读）: references/KuiklyUI/docs/API/components/basic-attr-event.md
-- Public API 补充: references/all-public-classes.md 
+- Public API 补充: references/all-public-classes.md
 ```
 
-**Step 2 — 查阅源码实现**
+**Step 2 — 查阅源码实现**（按需）
 当需要确认属性/方法是否存在、查找组件实现细节、查看使用示例或理解平台特定实现时：
 ```
 - 核心类: references/KuiklyUI/core/src/commonMain/kotlin/com/tencent/kuikly/core/base/
@@ -108,9 +110,8 @@ description: Kuikly UI 框架开发助手。帮助使用 Kuikly 组件（View、
 - **H5**：基于 kotlin.js（Beta 版）
 - **微信小程序**：Beta 版支持
 
-### 2. 开发模式
+### 2. 开发模式：标准 Kuikly DSL（稳定版）
 
-#### 标准 Kuikly DSL（稳定版）
 使用自研 DSL 语法，通过 `attr { }` 和 `event { }` 块定义组件：
 
 ```kotlin
@@ -136,30 +137,7 @@ internal class MyPage : BasePager() {
 }
 ```
 
-#### Compose DSL
-支持标准 Compose DSL 语法，覆盖 Android/iOS/鸿蒙/H5/微信小程序：
-
-```kotlin
-@Composable
-fun MyScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Hello Kuikly",
-            fontSize = 20.sp,
-            color = Color.Blue
-        )
-        
-        Button(onClick = { /* 处理点击 */ }) {
-            Text("点击我")
-        }
-    }
-}
-```
+> 如果需要使用 Compose DSL 语法（`@Composable` / `Column` / `Row` / `Modifier` 等），请切换到 `kuikly-compose-ui-framework` skill。
 
 ### 3. 布局系统
 Kuikly 使用 **FlexBox 布局**作为跨平台布局规则，确保各平台一致性。
@@ -439,9 +417,6 @@ Kuikly 使用 **FlexBox 布局**作为跨平台布局规则，确保各平台一
   - 自定义组件，桥接原生 UI
   - 源码参考：`references/KuiklyUI/core-render-{platform}/`
 
-- **Compose View 嵌入**：`references/KuiklyUI/docs/DevGuide/compose-view.md`
-  - 在 Compose 中使用传统 Kuikly DSL
-
 - **View Ref 引用**：`references/KuiklyUI/docs/DevGuide/view-ref.md`
   - 获取组件引用
 
@@ -530,54 +505,7 @@ Kuikly 使用 **FlexBox 布局**作为跨平台布局规则，确保各平台一
 4. 如果确实需要，可以通过扩展组件实现
 ```
 
-## Compose DSL 速查
+## 相关 skill
 
-Kuikly 同时支持 Compose DSL 语法，覆盖 Android/iOS/鸿蒙/H5/微信小程序。
-
-### Compose DSL 页面定义
-
-```kotlin
-import com.tencent.kuikly.compose.ComposeContainer
-import com.tencent.kuikly.compose.setContent
-import com.tencent.kuikly.core.annotations.Page
-
-@Page("YourPageName")
-class YourPage : ComposeContainer() {
-    override fun willInit() {
-        super.willInit()
-        setContent {
-            YourScreen()
-        }
-    }
-}
-```
-
-### Compose DSL 包名规则
-
-Compose DSL 的 import **不使用** `androidx.compose.*`，而是使用 Kuikly 自己的包名：
-
-| 类别 | Kuikly Compose 包名 |
-|------|---------------------|
-| UI 基础 | `com.tencent.kuikly.compose.ui.*` |
-| Foundation | `com.tencent.kuikly.compose.foundation.*` |
-| Material3 | `com.tencent.kuikly.compose.material3.*` |
-| 动画 | `com.tencent.kuikly.compose.animation.*` |
-| Runtime | `androidx.compose.runtime.*` (例外，保持原包名) |
-
-### Compose DSL 文档与源码
-
-| 资源 | 路径 |
-|------|------|
-| 核心组件 | `references/KuiklyUI/docs/Compose/core-components.md` |
-| 布局系统 | `references/KuiklyUI/docs/Compose/layout.md` |
-| 列表滚动 | `references/KuiklyUI/docs/Compose/list-and-scroll.md` |
-| Modifier | `references/KuiklyUI/docs/Compose/modifier.md` |
-| 动画系统 | `references/KuiklyUI/docs/Compose/animation-system.md` |
-| 手势系统 | `references/KuiklyUI/docs/Compose/gesture-system.md` |
-| 状态管理 | `references/KuiklyUI/docs/Compose/status-management.md` |
-| 导航 | `references/KuiklyUI/docs/Compose/navigation.md` |
-| ViewModel | `references/KuiklyUI/docs/Compose/view-model.md` |
-| 常见问题 | `references/KuiklyUI/docs/Compose/faq.md` |
-| 能力全览 | `references/KuiklyUI/docs/Compose/status.md` |
-| Compose 源码 | `references/KuiklyUI/compose/src/commonMain/kotlin/com/tencent/kuikly/compose/` |
-| Demo 示例 | `references/KuiklyUI/demo/src/commonMain/kotlin/com/tencent/kuikly/demo/pages/compose/` |
+- **`kuikly-compose-ui-framework`** — 如需使用 Compose DSL 语法（`@Composable` / `Column` / `Row` / `Modifier` 等）开发 Kuikly 页面，请切换到该 skill。
+- **`kuikly-compose-interop-dsl`** — 在 Compose DSL 中嵌入传统 Kuikly DSL 组件时使用。
