@@ -69,7 +69,7 @@ class YourPage : ComposeContainer() {
 | 原生 Compose 组件 | 替代方案 |
 |---|---|
 | `OutlinedTextField(...)` | 用 `TextField(...)` 自定义 `shape` / `colors` 模拟 |
-| `BasicTextField2` / `TextFieldState` | 用 `BasicTextField(value, onValueChange)` Legacy API |
+| `BasicTextField2` | 用 `BasicTextField(value, onValueChange)` Legacy API |
 | `PullToRefreshBox` | 用 `pullToRefreshItem()`（见第九章 PullToRefresh） |
 | `ClickableText` | 用 `Text` + `AnnotatedString` 配合 `LinkAnnotation.Clickable`（见 7.4） |
 | `Icon` / `IconImage` | 不支持，用 `Image` 替代 |
@@ -136,13 +136,12 @@ stickyHeaderWithMarginTop(key, listState, hoverMarginTop = 56.dp) { _ -> content
 | 差异点 | 说明 |
 |--------|------|
 | 无 `OutlinedTextField` | 用 `TextField` + 自定义 `shape` / `colors` 模拟 |
-| `TextField` 无 `TextFieldValue` 重载 | 仅支持 `String` 版本；需要 `TextFieldValue` 版本请用 `BasicTextField` |
 | `onValueChange` 有默认空实现 | **务必显式传入**，否则输入不会更新 state |
 | `VisualTransformation` 不生效 | 密码输入改用 `KeyboardOptions(keyboardType = KeyboardType.Password)` |
 | `TextFieldValue.selection` 始终返回 `TextRange.Zero` | 不要依赖 selection 控制光标，暂无替代方案 |
 | `KeyboardType.Phone` / `Uri` / `Decimal` | 均映射为默认键盘，无专用键盘（`Decimal` 可用 `Number` 替代） |
 | 键盘显隐控制 | `show()` / `hide()` 可用但异步延迟执行，避免同帧连续调用 |
-| `Text` 组件不支持自由复制 | 用户无法通过长按等方式选择并复制文本内容 |
+| `Text` 组件默认不可选中 | 可用 `SelectionContainer(state = rememberSelectionContainerState()) { ... }` 包裹 |
 
 ### 7.2 输入长度限制（⚠️ 重要）
 
