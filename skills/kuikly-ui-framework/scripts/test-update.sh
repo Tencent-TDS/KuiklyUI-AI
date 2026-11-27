@@ -9,6 +9,7 @@ echo "=========================================="
 echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "步骤 1: 检查更新状态"
 echo "----------------------------------------"
@@ -41,9 +42,9 @@ echo ""
 echo "步骤 3: 验证仓库状态"
 echo "----------------------------------------"
 
-REPO_DIR="$SCRIPT_DIR/references/KuiklyUI"
+REPO_DIR="$SKILL_DIR/references/KuiklyUI"
 
-if [ -d "$REPO_DIR/.git" ]; then
+if git -C "$REPO_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "✓ 仓库存在"
     cd "$REPO_DIR"
     
