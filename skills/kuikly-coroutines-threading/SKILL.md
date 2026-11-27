@@ -29,7 +29,7 @@ description: "Kuikly 协程与多线程编程助手。指导如何在 Kuikly 中
 
 **API 入口：**
 - `GlobalScope.launch { ... }` — 全局作用域
-- `lifecycleScope.launch { ... }` — 绑定 Pager 生命周期（推荐）
+- `lifecycleScope.launch { ... }` — Pager 内建协程作用域（推荐），**不会随页面销毁自动取消**；如需取消，持有 `launch` 返回的 `Job`，在页面销毁时调用 `cancel()`
 - `async { ... }` / `await()` — 并发获取结果
 
 **import：**
